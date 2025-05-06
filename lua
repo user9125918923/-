@@ -179,124 +179,39 @@ ps.PlayerRemoving:Connect(function(p)
     end
 end)
 
-local stakeESP = {}
+-- Deleting StunPlayer and EnhancedMovementService
+local stunPlayerPath = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GameServices"):WaitForChild("ToClient"):WaitForChild("StunPlayer")
+local enhancedMovementService = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("EnhancedMovementService")
 
-local function createStakeESP(stakeModel)
-    local mainPart = stakeModel:FindFirstChild("Main")
-    if not mainPart then return end
-
-    local gui = Instance.new("BillboardGui")
-    gui.Name = "StakeESP"
-    gui.Size = UDim2.new(0, 100, 0, 25)
-    gui.Adornee = mainPart
-    gui.AlwaysOnTop = true
-    gui.StudsOffset = Vector3.new(0, 5, 0)
-    gui.Parent = mainPart
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.TextStrokeTransparency = 0.5
-    label.TextScaled = true
-    label.Text = "White Oak Stake"
-    label.Font = Enum.Font.SourceSansBold
-    label.Parent = gui
-
-    stakeESP[stakeModel] = gui
-
-    stakeModel.AncestryChanged:Connect(function(_, parent)
-        if not parent and stakeESP[stakeModel] then
-            stakeESP[stakeModel]:Destroy()
-            stakeESP[stakeModel] = nil
-        end
-    end)
+if stunPlayerPath then
+    stunPlayerPath:Destroy()
 end
 
-local function checkForNewStakes()
-    for _, obj in ipairs(workspace:GetChildren()) do
-        if obj.Name == "IndestructibleWhiteOakStake" and not stakeESP[obj] then
-            createStakeESP(obj)
-        end
-    end
+if enhancedMovementService then
+    enhancedMovementService:Destroy()
 end
 
-rs.RenderStepped:Connect(function()
-    checkForNewStakes()
-    for stake, gui in pairs(stakeESP) do
-        if stake:IsDescendantOf(workspace) and stake:FindFirstChild("Main") then
-            local dist = (lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") and (lp.Character.HumanoidRootPart.Position - stake.Main.Position).Magnitude) or 0
-            gui.TextLabel.Text = "White Oak Stake\n" .. math.floor(dist) .. " studs"
-        end
+game.ReplicatedStorage.Remotes.GameServices.ToClient.ChildAdded:Connect(function(child)
+    if child.Name == "StunPlayer" then
+        child:Destroy()
     end
 end)
 
-local tomb = game.Workspace:WaitForChild("Interactables"):WaitForChild("SilasTomb")
-
-while true do
-    local tunnelDoor = tomb:FindFirstChild("TunnelDoor")
-    if tunnelDoor then
-        tunnelDoor:Destroy()
-        break
-    end
-    task.wait(1)
-end
-
-local player, camera = game.Players.LocalPlayer, workspace.CurrentCamera
-local espObjects = {}
-
-local function createESP(part)
-    local mainPart = part:FindFirstChild("Main")
-    if not mainPart then return end
-
-    local label = Instance.new("TextLabel", Instance.new("BillboardGui", mainPart))
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency, label.TextColor3 = 1, Color3.fromRGB(169, 169, 169)
-    label.TextScaled, label.TextStrokeTransparency, label.TextSize = true, 0.8, 10
-    label.Text = "White Oak Stake"
-    label.Parent.Size = UDim2.new(0, 100, 0, 25)
-    label.Parent.Adornee, label.Parent.AlwaysOnTop, label.Parent.StudsOffset = mainPart, true, Vector3.new(0, 5, 0)
-
-    table.insert(espObjects, {mainPart = mainPart, label = label, billboardGui = label.Parent})
-end
-
-game:GetService("RunService").RenderStepped:Connect(function()
-    for _, part in ipairs(workspace:GetChildren()) do
-        if part.Name == "IndestructibleWhiteOakStake" and part:FindFirstChild("Main") then
-            local exists = false
-            for _, esp in ipairs(espObjects) do
-                if esp.mainPart == part.Main then
-                    exists = true
-                    break
-                end
-            end
-            if not exists then createESP(part) end
-        end
-    end
-
-    for _, esp in ipairs(espObjects) do
-        local distance = (camera.CFrame.Position - esp.mainPart.Position).Magnitude
-        esp.label.Text = "White Oak Stake\n" .. math.round(distance) .. " studs"
-        esp.billboardGui.Enabled = camera:WorldToViewportPoint(esp.mainPart.Position).Z > 0
-    end
-end)
-
-for _, v in ipairs(game:GetService("Workspace"):GetDescendants()) do
-    if v.ClassName == "ProximityPrompt" then v.HoldDuration = 0 end
-end
-
-local player = game.Players.LocalPlayer
-local screenUtils = player:WaitForChild("PlayerGui"):WaitForChild("ScreenUtils")
+-- Deleting GUI Elements
+local screenUtils = lp.PlayerGui:WaitForChild("ScreenUtils")
 local children = screenUtils:GetChildren()
 if #children >= 5 then
     children[3]:Destroy()
     children[4]:Destroy()
     children[5]:Destroy()
 end
-game.Players.LocalPlayer.CameraMaxZoomDistance = math.huge
-game.Players.LocalPlayer.CameraMinZoomDistance = 0
+
+-- Setting camera zoom
+lp.CameraMaxZoomDistance = math.huge
+lp.CameraMinZoomDistance = 0
+
 if not game:IsLoaded() then game.Loaded:Wait() end
-local PopperClient = game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"):WaitForChild("CameraModule"):WaitForChild("ZoomController"):WaitForChild("Popper")
+local PopperClient = lp.PlayerScripts:WaitForChild("PlayerModule"):WaitForChild("CameraModule"):WaitForChild("ZoomController"):WaitForChild("Popper")
 for _, v in next, getgc() do
     if getfenv(v).script == PopperClient and typeof(v) == "function" then
         for i2, v2 in next, debug.getconstants(v) do
@@ -305,11 +220,12 @@ for _, v in next, getgc() do
         end
     end
 end
+
 spawn(function()
     while true do
         wait(1)
-        game.Players.LocalPlayer.CameraMaxZoomDistance = math.huge
-        game.Players.LocalPlayer.CameraMinZoomDistance = 0
+        lp.CameraMaxZoomDistance = math.huge
+        lp.CameraMinZoomDistance = 0
     end
 end)
 
@@ -364,31 +280,7 @@ task.spawn(function()
     end
 end)
 
-local stunPlayerPath = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GameServices"):WaitForChild("ToClient"):WaitForChild("StunPlayer")
-local enhancedMovementService = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("EnhancedMovementService")
-
-local function deleteStunPlayer()
-    if stunPlayerPath then
-        stunPlayerPath:Destroy()
-    end
-end
-
-local function deleteEnhancedMovementService()
-    if enhancedMovementService then
-        enhancedMovementService:Destroy()
-    end
-end
-
-deleteStunPlayer()
-deleteEnhancedMovementService()
-
-game.ReplicatedStorage.Remotes.GameServices.ToClient.ChildAdded:Connect(function(child)
-    if child.Name == "StunPlayer" then
-        child:Destroy()
-    end
-end)
-
-local tomb = game.Workspace:WaitForChild("Interactables"):WaitForChild("SilasTomb")
+local tomb = workspace:WaitForChild("Interactables"):WaitForChild("SilasTomb")
 
 while true do
     local tunnelDoor = tomb:FindFirstChild("TunnelDoor")

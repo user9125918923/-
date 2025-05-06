@@ -314,29 +314,25 @@ task.spawn(function()
     end
 end)
 
-local stunPlayerPath = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GameServices"):WaitForChild("ToClient"):WaitForChild("StunPlayer")
-local enhancedMovementService = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("EnhancedMovementService")
+local rs = game:GetService("ReplicatedStorage")
+local remotes = rs:WaitForChild("Remotes")
+local gameServices = remotes:WaitForChild("GameServices")
+local toClient = gameServices:WaitForChild("ToClient")
 
-local function deleteStunPlayer()
-    if stunPlayerPath then
-        stunPlayerPath:Destroy()
-    end
+local function block(name, parent)
+	local item = parent:FindFirstChild(name)
+	if item then
+		item:Destroy()
+	end
+	parent.ChildAdded:Connect(function(child)
+		if child.Name == name then
+			child:Destroy()
+		end
+	end)
 end
 
-local function deleteEnhancedMovementService()
-    if enhancedMovementService then
-        enhancedMovementService:Destroy()
-    end
-end
-
-deleteStunPlayer()
-deleteEnhancedMovementService()
-
-game.ReplicatedStorage.Remotes.GameServices.ToClient.ChildAdded:Connect(function(child)
-    if child.Name == "StunPlayer" then
-        child:Destroy()
-    end
-end)
+block("StunPlayer", toClient)
+block("EnhancedMovementService", remotes)
 
 local player = game.Players.LocalPlayer
 local screenUtils = player:WaitForChild("PlayerGui"):WaitForChild("ScreenUtils")

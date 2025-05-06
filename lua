@@ -1,160 +1,3 @@
-local player, camera = game.Players.LocalPlayer, workspace.CurrentCamera
-local espObjects = {}
-
-local function createESP(part)
-    local mainPart = part:FindFirstChild("Main")
-    if not mainPart then return end
-
-    local label = Instance.new("TextLabel", Instance.new("BillboardGui", mainPart))
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency, label.TextColor3 = 1, Color3.fromRGB(169, 169, 169)
-    label.TextScaled, label.TextStrokeTransparency, label.TextSize = true, 0.8, 10
-    label.Text = "White Oak Stake"
-    label.Parent.Size = UDim2.new(0, 100, 0, 25)
-    label.Parent.Adornee, label.Parent.AlwaysOnTop, label.Parent.StudsOffset = mainPart, true, Vector3.new(0, 5, 0)
-
-    table.insert(espObjects, {mainPart = mainPart, label = label, billboardGui = label.Parent})
-end
-
-game:GetService("RunService").RenderStepped:Connect(function()
-    for _, part in ipairs(workspace:GetChildren()) do
-        if part.Name == "IndestructibleWhiteOakStake" and part:FindFirstChild("Main") then
-            local exists = false
-            for _, esp in ipairs(espObjects) do
-                if esp.mainPart == part.Main then
-                    exists = true
-                    break
-                end
-            end
-            if not exists then createESP(part) end
-        end
-    end
-
-    for _, esp in ipairs(espObjects) do
-        local distance = (camera.CFrame.Position - esp.mainPart.Position).Magnitude
-        esp.label.Text = "White Oak Stake\n" .. math.round(distance) .. " studs"
-        esp.billboardGui.Enabled = camera:WorldToViewportPoint(esp.mainPart.Position).Z > 0
-    end
-end)
-
-for _, v in ipairs(game:GetService("Workspace"):GetDescendants()) do
-    if v.ClassName == "ProximityPrompt" then v.HoldDuration = 0 end
-end
-
-local tomb = game.Workspace:WaitForChild("Interactables"):WaitForChild("SilasTomb")
-
-while true do
-    local tunnelDoor = tomb:FindFirstChild("TunnelDoor")
-    if tunnelDoor then
-        tunnelDoor:Destroy()
-        break
-    end
-    task.wait(1)
-end
-
-local targetSize1 = Vector3.new(73.965, 1, 12.874)
-local targetSize2 = Vector3.new(0.124, 6.944, 37.45)
-
-local function isMatch1(size)
-    return (size - targetSize1).Magnitude < 0.05
-end
-
-local function isMatch2(size)
-    return math.abs(size.X - targetSize2.X) < 0.01 and math.abs(size.Y - targetSize2.Y) < 0.01 and math.abs(size.Z - targetSize2.Z) < 0.01
-end
-
-task.spawn(function()
-    while true do
-        local b = workspace:FindFirstChild("Buildings")
-        local estate = b and b:FindFirstChild("MikaelsonEstate")
-        if estate then
-            local found = false
-            for _, p in pairs(estate:GetDescendants()) do
-                if p:IsA("BasePart") and isMatch1(p.Size) then
-                    p:Destroy()
-                    found = true
-                end
-            end
-            if found then break end
-        end
-        task.wait(1)
-    end
-end)
-
-task.spawn(function()
-    while true do
-        local b = workspace:FindFirstChild("Buildings")
-        local garage = b and b:FindFirstChild("Garage")
-        if garage then
-            local found = false
-            for _, p in ipairs(garage:GetDescendants()) do
-                if p:IsA("BasePart") and isMatch2(p.Size) then
-                    p:Destroy()
-                    found = true
-                end
-            end
-            if found then break end
-        end
-        task.wait(1)
-    end
-end)
-
-local stunPlayerPath = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GameServices"):WaitForChild("ToClient"):WaitForChild("StunPlayer")
-local enhancedMovementService = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("EnhancedMovementService")
-
-local function deleteStunPlayer()
-    if stunPlayerPath then
-        stunPlayerPath:Destroy()
-    end
-end
-
-local function deleteEnhancedMovementService()
-    if enhancedMovementService then
-        enhancedMovementService:Destroy()
-    end
-end
-
-deleteStunPlayer()
-deleteEnhancedMovementService()
-
-game.ReplicatedStorage.Remotes.GameServices.ToClient.ChildAdded:Connect(function(child)
-    if child.Name == "StunPlayer" then
-        child:Destroy()
-    end
-end)
-
-local player = game.Players.LocalPlayer
-local screenUtils = player:WaitForChild("PlayerGui"):WaitForChild("ScreenUtils")
-local children = screenUtils:GetChildren()
-if #children >= 5 then
-    children[3]:Destroy()
-    children[4]:Destroy()
-    children[5]:Destroy()
-end
-game.Players.LocalPlayer.CameraMaxZoomDistance = math.huge
-game.Players.LocalPlayer.CameraMinZoomDistance = 0
-if not game:IsLoaded() then game.Loaded:Wait() end
-local PopperClient = game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"):WaitForChild("CameraModule"):WaitForChild("ZoomController"):WaitForChild("Popper")
-for _, v in next, getgc() do
-    if getfenv(v).script == PopperClient and typeof(v) == "function" then
-        for i2, v2 in next, debug.getconstants(v) do
-            if tonumber(v2) == 0.25 then debug.setconstant(v, i2, 0) end
-            if tonumber(v2) == 0 then debug.setconstant(v, i2, 0.25) end
-        end
-    end
-end
-spawn(function()
-    while true do
-        wait(1)
-        game.Players.LocalPlayer.CameraMaxZoomDistance = math.huge
-        game.Players.LocalPlayer.CameraMinZoomDistance = 0
-    end
-end)
-
-local function isSizeMatch(size)
-    return math.abs(size.X - 0.124) < 0.01 and math.abs(size.Y - 6.944) < 0.01 and math.abs(size.Z - 37.45) < 0.01
-end
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -369,3 +212,318 @@ game.Workspace.playerCloneFolder.ChildAdded:Connect(function(child)
         end
     end
 end)
+
+local player, camera = game.Players.LocalPlayer, workspace.CurrentCamera
+local espObjects = {}
+
+local function createESP(part)
+    local mainPart = part:FindFirstChild("Main")
+    if not mainPart then return end
+
+    local label = Instance.new("TextLabel", Instance.new("BillboardGui", mainPart))
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency, label.TextColor3 = 1, Color3.fromRGB(169, 169, 169)
+    label.TextScaled, label.TextStrokeTransparency, label.TextSize = true, 0.8, 10
+    label.Text = "White Oak Stake"
+    label.Parent.Size = UDim2.new(0, 100, 0, 25)
+    label.Parent.Adornee, label.Parent.AlwaysOnTop, label.Parent.StudsOffset = mainPart, true, Vector3.new(0, 5, 0)
+
+    table.insert(espObjects, {mainPart = mainPart, label = label, billboardGui = label.Parent})
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    for _, part in ipairs(workspace:GetChildren()) do
+        if part.Name == "IndestructibleWhiteOakStake" and part:FindFirstChild("Main") then
+            local exists = false
+            for _, esp in ipairs(espObjects) do
+                if esp.mainPart == part.Main then
+                    exists = true
+                    break
+                end
+            end
+            if not exists then createESP(part) end
+        end
+    end
+
+    for _, esp in ipairs(espObjects) do
+        local distance = (camera.CFrame.Position - esp.mainPart.Position).Magnitude
+        esp.label.Text = "White Oak Stake\n" .. math.round(distance) .. " studs"
+        esp.billboardGui.Enabled = camera:WorldToViewportPoint(esp.mainPart.Position).Z > 0
+    end
+end)
+
+for _, v in ipairs(game:GetService("Workspace"):GetDescendants()) do
+    if v.ClassName == "ProximityPrompt" then v.HoldDuration = 0 end
+end
+
+local tomb = game.Workspace:WaitForChild("Interactables"):WaitForChild("SilasTomb")
+
+while true do
+    local tunnelDoor = tomb:FindFirstChild("TunnelDoor")
+    if tunnelDoor then
+        tunnelDoor:Destroy()
+        break
+    end
+    task.wait(1)
+end
+
+local targetSize1 = Vector3.new(73.965, 1, 12.874)
+local targetSize2 = Vector3.new(0.124, 6.944, 37.45)
+
+local function isMatch1(size)
+    return (size - targetSize1).Magnitude < 0.05
+end
+
+local function isMatch2(size)
+    return math.abs(size.X - targetSize2.X) < 0.01 and math.abs(size.Y - targetSize2.Y) < 0.01 and math.abs(size.Z - targetSize2.Z) < 0.01
+end
+
+task.spawn(function()
+    while true do
+        local b = workspace:FindFirstChild("Buildings")
+        local estate = b and b:FindFirstChild("MikaelsonEstate")
+        if estate then
+            local found = false
+            for _, p in pairs(estate:GetDescendants()) do
+                if p:IsA("BasePart") and isMatch1(p.Size) then
+                    p:Destroy()
+                    found = true
+                end
+            end
+            if found then break end
+        end
+        task.wait(1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        local b = workspace:FindFirstChild("Buildings")
+        local garage = b and b:FindFirstChild("Garage")
+        if garage then
+            local found = false
+            for _, p in ipairs(garage:GetDescendants()) do
+                if p:IsA("BasePart") and isMatch2(p.Size) then
+                    p:Destroy()
+                    found = true
+                end
+            end
+            if found then break end
+        end
+        task.wait(1)
+    end
+end)
+
+local stunPlayerPath = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GameServices"):WaitForChild("ToClient"):WaitForChild("StunPlayer")
+local enhancedMovementService = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("EnhancedMovementService")
+
+local function deleteStunPlayer()
+    if stunPlayerPath then
+        stunPlayerPath:Destroy()
+    end
+end
+
+local function deleteEnhancedMovementService()
+    if enhancedMovementService then
+        enhancedMovementService:Destroy()
+    end
+end
+
+deleteStunPlayer()
+deleteEnhancedMovementService()
+
+game.ReplicatedStorage.Remotes.GameServices.ToClient.ChildAdded:Connect(function(child)
+    if child.Name == "StunPlayer" then
+        child:Destroy()
+    end
+end)
+
+local player = game.Players.LocalPlayer
+local screenUtils = player:WaitForChild("PlayerGui"):WaitForChild("ScreenUtils")
+local children = screenUtils:GetChildren()
+if #children >= 5 then
+    children[3]:Destroy()
+    children[4]:Destroy()
+    children[5]:Destroy()
+end
+game.Players.LocalPlayer.CameraMaxZoomDistance = math.huge
+game.Players.LocalPlayer.CameraMinZoomDistance = 0
+if not game:IsLoaded() then game.Loaded:Wait() end
+local PopperClient = game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"):WaitForChild("CameraModule"):WaitForChild("ZoomController"):WaitForChild("Popper")
+for _, v in next, getgc() do
+    if getfenv(v).script == PopperClient and typeof(v) == "function" then
+        for i2, v2 in next, debug.getconstants(v) do
+            if tonumber(v2) == 0.25 then debug.setconstant(v, i2, 0) end
+            if tonumber(v2) == 0 then debug.setconstant(v, i2, 0.25) end
+        end
+    end
+end
+spawn(function()
+    while true do
+        wait(1)
+        game.Players.LocalPlayer.CameraMaxZoomDistance = math.huge
+        game.Players.LocalPlayer.CameraMinZoomDistance = 0
+    end
+end)
+
+local function isSizeMatch(size)
+    return math.abs(size.X - 0.124) < 0.01 and math.abs(size.Y - 6.944) < 0.01 and math.abs(size.Z - 37.45) < 0.01
+end
+
+local tomb = game.Workspace:WaitForChild("Interactables"):WaitForChild("SilasTomb")
+
+while true do
+    local tunnelDoor = tomb:FindFirstChild("TunnelDoor")
+    if tunnelDoor then
+        tunnelDoor:Destroy()
+        break
+    end
+    task.wait(1)
+end
+
+local player, camera = game.Players.LocalPlayer, workspace.CurrentCamera
+local espObjects = {}
+
+local function createESP(part)
+    local mainPart = part:FindFirstChild("Main")
+    if not mainPart then return end
+
+    local label = Instance.new("TextLabel", Instance.new("BillboardGui", mainPart))
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency, label.TextColor3 = 1, Color3.fromRGB(169, 169, 169)
+    label.TextScaled, label.TextStrokeTransparency, label.TextSize = true, 0.8, 10
+    label.Text = "White Oak Stake"
+    label.Parent.Size = UDim2.new(0, 100, 0, 25)
+    label.Parent.Adornee, label.Parent.AlwaysOnTop, label.Parent.StudsOffset = mainPart, true, Vector3.new(0, 5, 0)
+
+    table.insert(espObjects, {mainPart = mainPart, label = label, billboardGui = label.Parent})
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    for _, part in ipairs(workspace:GetChildren()) do
+        if part.Name == "IndestructibleWhiteOakStake" and part:FindFirstChild("Main") then
+            local exists = false
+            for _, esp in ipairs(espObjects) do
+                if esp.mainPart == part.Main then
+                    exists = true
+                    break
+                end
+            end
+            if not exists then createESP(part) end
+        end
+    end
+
+    for _, esp in ipairs(espObjects) do
+        local distance = (camera.CFrame.Position - esp.mainPart.Position).Magnitude
+        esp.label.Text = "White Oak Stake\n" .. math.round(distance) .. " studs"
+        esp.billboardGui.Enabled = camera:WorldToViewportPoint(esp.mainPart.Position).Z > 0
+    end
+end)
+
+for _, v in ipairs(game:GetService("Workspace"):GetDescendants()) do
+    if v.ClassName == "ProximityPrompt" then v.HoldDuration = 0 end
+end
+
+local player = game.Players.LocalPlayer
+local screenUtils = player:WaitForChild("PlayerGui"):WaitForChild("ScreenUtils")
+local children = screenUtils:GetChildren()
+if #children >= 5 then
+    children[3]:Destroy()
+    children[4]:Destroy()
+    children[5]:Destroy()
+end
+game.Players.LocalPlayer.CameraMaxZoomDistance = math.huge
+game.Players.LocalPlayer.CameraMinZoomDistance = 0
+if not game:IsLoaded() then game.Loaded:Wait() end
+local PopperClient = game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule"):WaitForChild("CameraModule"):WaitForChild("ZoomController"):WaitForChild("Popper")
+for _, v in next, getgc() do
+    if getfenv(v).script == PopperClient and typeof(v) == "function" then
+        for i2, v2 in next, debug.getconstants(v) do
+            if tonumber(v2) == 0.25 then debug.setconstant(v, i2, 0) end
+            if tonumber(v2) == 0 then debug.setconstant(v, i2, 0.25) end
+        end
+    end
+end
+spawn(function()
+    while true do
+        wait(1)
+        game.Players.LocalPlayer.CameraMaxZoomDistance = math.huge
+        game.Players.LocalPlayer.CameraMinZoomDistance = 0
+    end
+end)
+
+local function isSizeMatch(size)
+    return math.abs(size.X - 0.124) < 0.01 and math.abs(size.Y - 6.944) < 0.01 and math.abs(size.Z - 37.45) < 0.01
+end
+
+local targetSize1 = Vector3.new(73.965, 1, 12.874)
+local targetSize2 = Vector3.new(0.124, 6.944, 37.45)
+
+local function isMatch1(size)
+    return (size - targetSize1).Magnitude < 0.05
+end
+
+local function isMatch2(size)
+    return math.abs(size.X - targetSize2.X) < 0.01 and math.abs(size.Y - targetSize2.Y) < 0.01 and math.abs(size.Z - targetSize2.Z) < 0.01
+end
+
+task.spawn(function()
+    while true do
+        local b = workspace:FindFirstChild("Buildings")
+        local estate = b and b:FindFirstChild("MikaelsonEstate")
+        if estate then
+            local found = false
+            for _, p in pairs(estate:GetDescendants()) do
+                if p:IsA("BasePart") and isMatch1(p.Size) then
+                    p:Destroy()
+                    found = true
+                end
+            end
+            if found then break end
+        end
+        task.wait(1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        local b = workspace:FindFirstChild("Buildings")
+        local garage = b and b:FindFirstChild("Garage")
+        if garage then
+            local found = false
+            for _, p in ipairs(garage:GetDescendants()) do
+                if p:IsA("BasePart") and isMatch2(p.Size) then
+                    p:Destroy()
+                    found = true
+                end
+            end
+            if found then break end
+        end
+        task.wait(1)
+    end
+end)
+
+local stunPlayerPath = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GameServices"):WaitForChild("ToClient"):WaitForChild("StunPlayer")
+local enhancedMovementService = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("EnhancedMovementService")
+
+local function deleteStunPlayer()
+    if stunPlayerPath then
+        stunPlayerPath:Destroy()
+    end
+end
+
+local function deleteEnhancedMovementService()
+    if enhancedMovementService then
+        enhancedMovementService:Destroy()
+    end
+end
+
+deleteStunPlayer()
+deleteEnhancedMovementService()
+
+game.ReplicatedStorage.Remotes.GameServices.ToClient.ChildAdded:Connect(function(child)
+    if child.Name == "StunPlayer" then
+        child:Destroy()
+    end
+end)
+

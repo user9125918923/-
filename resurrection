@@ -1,0 +1,211 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local abilityService = Remotes:WaitForChild("AbilityService"):WaitForChild("ToServer")
+local toolService = Remotes:WaitForChild("ToolService"):WaitForChild("ToServer")
+
+local PreparingToResurrect = abilityService:WaitForChild("PreparingToResurrect")
+local AbilityActivated = abilityService:WaitForChild("AbilityActivated__")
+local ToolStateChanged = toolService:WaitForChild("ToolStateChanged")
+local AbilityStateChanged = abilityService:WaitForChild("AbilityStateChanged")
+
+local playerCloneFolder = Workspace:WaitForChild("playerCloneFolder")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PlayerCloneSelector"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local container = Instance.new("Frame")
+container.Size = UDim2.new(0.5, 0, 0.5, 0)
+container.Position = UDim2.new(0.25, 0, 0.25, 0)
+container.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+container.BorderSizePixel = 2
+container.Parent = screenGui
+container.Active = true
+container.Draggable = true
+
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+titleBar.Text = ""
+titleBar.Font = Enum.Font.SourceSansBold
+titleBar.TextSize = 20
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.Parent = container
+
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Position = UDim2.new(1, -30, 0, 0)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.SourceSansBold
+minimizeButton.TextSize = 24
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.Parent = container
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -60, 0, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+closeButton.Text = "X"
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextSize = 20
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Parent = container
+
+closeButton.MouseButton1Click:Connect(function()
+	screenGui:Destroy()
+end)
+
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Size = UDim2.new(0, 100, 0, 30)
+timerLabel.Position = UDim2.new(0, 5, 0, 0)
+timerLabel.BackgroundTransparency = 1
+timerLabel.Text = ""
+timerLabel.Font = Enum.Font.SourceSans
+timerLabel.TextSize = 18
+timerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+timerLabel.TextXAlignment = Enum.TextXAlignment.Left
+timerLabel.Parent = container
+
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Position = UDim2.new(0, 0, 0, 30)
+scrollingFrame.Size = UDim2.new(1, 0, 1, -30)
+scrollingFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+scrollingFrame.BorderSizePixel = 0
+scrollingFrame.ScrollBarThickness = 8
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollingFrame.Parent = container
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 5)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = scrollingFrame
+
+local minimized = false
+minimizeButton.MouseButton1Click:Connect(function()
+	minimized = not minimized
+	scrollingFrame.Visible = not minimized
+	container.Size = minimized and UDim2.new(0.5, 0, 0, 30) or UDim2.new(0.5, 0, 0.5, 0)
+end)
+
+local function startTimer(duration)
+	local remaining = duration
+	timerLabel.Text = "Resurrection Cooldown: " .. remaining .. "s"
+	while remaining > 0 do
+		task.wait(1)
+		remaining -= 1
+		timerLabel.Text = "Resurrection Cooldown: " .. remaining .. "s"
+	end
+	timerLabel.Text = "Resurrection Cooldown: Ready"
+end
+
+local function resurrectPlayer(targetName)
+	pcall(function() PreparingToResurrect:InvokeServer() end)
+	pcall(function() ToolStateChanged:FireServer() end)
+	pcall(function() AbilityActivated:FireServer(targetName) end)
+	local chant = "Phasmatos Ravaros On Animum"
+	pcall(function() AbilityStateChanged:FireServer(chant) end)
+	coroutine.wrap(function() startTimer(180) end)()
+end
+
+local function updateButtons()
+	for _, child in pairs(scrollingFrame:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+
+	local models = playerCloneFolder:GetChildren()
+	if #models == 0 then
+		scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+		return
+	end
+
+	for _, model in ipairs(models) do
+		if model:IsA("Model") then
+			local button = Instance.new("TextButton")
+			button.Size = UDim2.new(1, -10, 0, 60)
+			button.Text = ""
+			button.Font = Enum.Font.SourceSansBold
+			button.TextSize = 20
+			button.TextColor3 = Color3.fromRGB(255, 255, 255)
+			button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			button.BorderSizePixel = 0
+			button.Parent = scrollingFrame
+
+			local nameLabel = Instance.new("TextLabel")
+			nameLabel.Size = UDim2.new(1, -10, 0.5, 0)
+			nameLabel.Position = UDim2.new(0, 5, 0, 0)
+			nameLabel.Text = model.Name
+			nameLabel.Font = Enum.Font.SourceSansBold
+			nameLabel.TextSize = 20
+			nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			nameLabel.BackgroundTransparency = 1
+			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+			nameLabel.Parent = button
+
+			local timerText = Instance.new("TextLabel")
+			timerText.Size = UDim2.new(1, -10, 0.5, 0)
+			timerText.Position = UDim2.new(0, 5, 0.5, 0)
+			timerText.Text = "Time left On Other Side: 125s"
+			timerText.Font = Enum.Font.SourceSans
+			timerText.TextSize = 16
+			timerText.TextColor3 = Color3.fromRGB(200, 200, 200)
+			timerText.BackgroundTransparency = 1
+			timerText.TextXAlignment = Enum.TextXAlignment.Left
+			timerText.Parent = button
+
+			coroutine.wrap(function()
+				local timeLeft = 125
+				while timeLeft > 0 do
+					timerText.Text = "Time left On Other Side: " .. timeLeft .. "s"
+					task.wait(1)
+					timeLeft -= 1
+				end
+				timerText.Text = "Time left On Other Side: 0s"
+			end)()
+
+			local confirmed = false
+			local resetTime = 4
+			local resetThread = nil
+
+			local function resetConfirm()
+				confirmed = false
+				nameLabel.Text = model.Name
+			end
+
+			button.MouseButton1Click:Connect(function()
+				if confirmed then
+					nameLabel.Text = "Resurrecting..."
+					resurrectPlayer(model.Name)
+					resetConfirm()
+					if resetThread then
+						task.cancel(resetThread)
+					end
+				else
+					confirmed = true
+					nameLabel.Text = "Are you sure you want to resurrect " .. model.Name .. "?"
+					resetThread = task.delay(resetTime, function()
+						if confirmed then
+							resetConfirm()
+						end
+					end)
+				end
+			end)
+		end
+	end
+
+	task.wait()
+	scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+end
+
+updateButtons()
+playerCloneFolder.ChildAdded:Connect(updateButtons)
+playerCloneFolder.ChildRemoved:Connect(updateButtons)
